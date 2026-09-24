@@ -13,7 +13,11 @@ class ChefRecipeTests(TestCase):
             username="chef_recipe",
             password="Savorly123!",
         )
-        Profile.objects.create(user=self.chef, role=Profile.Role.CHEF)
+        Profile.objects.create(
+            user=self.chef,
+            role=Profile.Role.CHEF,
+            chef_approval_status=Profile.ChefApprovalStatus.APPROVED,
+        )
         self.client.force_login(self.chef)
 
     def test_chef_can_see_add_recipe_form_and_table_link(self):
@@ -47,6 +51,7 @@ class ChefRecipeTests(TestCase):
         added_recipe = recipe.objects.get()
         self.assertEqual(added_recipe.name, "Tomato Soup")
         self.assertEqual(added_recipe.recipe_description, "A warm and simple soup.")
+        self.assertEqual(added_recipe.posted_by, self.chef)
         self.assertFalse(added_recipe.recipe_image)
 
     def test_table_lists_added_recipes(self):
@@ -86,6 +91,7 @@ class ChefRecipeTests(TestCase):
         recipe_item = recipe.objects.create(
             name="Detailed Recipe",
             recipe_description=description,
+            posted_by=self.chef,
         )
 
         response = self.client.get(
@@ -97,6 +103,8 @@ class ChefRecipeTests(TestCase):
         self.assertContains(response, 'class="site-navbar"', count=1)
         self.assertEqual(response.context["recipe"], recipe_item)
         self.assertContains(response, description)
+        self.assertContains(response, "Posted by")
+        self.assertContains(response, self.chef.username)
         self.assertContains(response, "No image")
 
         content = response.content.decode()
@@ -105,6 +113,72 @@ class ChefRecipeTests(TestCase):
         description_position = content.index("recipe-details-description")
         self.assertLess(name_position, image_position)
         self.assertLess(image_position, description_position)
+
+    def test_chef_can_open_update_page_for_own_recipe(self):
+        recipe_item = recipe.objects.create(
+            name="Recipe to update",
+            recipe_description="The original description.",
+            posted_by=self.chef,
+        )
+
+        response = self.client.get(
+            reverse("update_recipe", args=[recipe_item.pk])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "update_recipe.html")
+        self.assertContains(response, 'class="site-navbar"', count=1)
+        self.assertContains(response, "Update Recipe")
+        self.assertContains(response, "Recipe to update")
+        self.assertContains(response, "The original description.")
+
+    def test_chef_can_update_own_recipe_without_replacing_image(self):
+        recipe_item = recipe.objects.create(
+            name="Recipe to update",
+            recipe_description="The original description.",
+            posted_by=self.chef,
+        )
+
+        response = self.client.post(
+            reverse("update_recipe", args=[recipe_item.pk]),
+            {
+                "recipe_name": "Updated recipe",
+                "recipe_description": "The updated description.",
+            },
+        )
+
+        self.assertRedirects(response, reverse("chefs_table"))
+        recipe_item.refresh_from_db()
+        self.assertEqual(recipe_item.name, "Updated recipe")
+        self.assertEqual(
+            recipe_item.recipe_description,
+            "The updated description.",
+        )
+        self.assertEqual(recipe_item.posted_by, self.chef)
+
+    def test_chef_cannot_update_another_chefs_recipe(self):
+        other_chef = User.objects.create_user(
+            username="other_recipe_chef",
+            password="Savorly123!",
+        )
+        Profile.objects.create(
+            user=other_chef,
+            role=Profile.Role.CHEF,
+            chef_approval_status=Profile.ChefApprovalStatus.APPROVED,
+        )
+        recipe_item = recipe.objects.create(
+            name="Private recipe",
+            recipe_description="This description must not change.",
+            posted_by=other_chef,
+        )
+
+        response = self.client.get(
+            reverse("update_recipe", args=[recipe_item.pk])
+        )
+
+        self.assertEqual(response.status_code, 404)
+        recipe_item.refresh_from_db()
+        self.assertEqual(recipe_item.name, "Private recipe")
 
     def test_non_chef_cannot_manage_recipes(self):
         user = User.objects.create_user(

@@ -13,6 +13,14 @@
     <header class="recipe-details-header">
       <p class="eyebrow mb-2">Recipe details</p>
       <h1>{{ recipe.name }}</h1>
+      <p class="recipe-details-author">
+        <span class="recipe-details-author__label">Posted by</span>
+        {% if recipe.posted_by %}
+          <span>{{ recipe.posted_by.username }}</span>
+        {% else %}
+          <span>Unknown chef</span>
+        {% endif %}
+      </p>
     </header>
 
     <div class="recipe-details-media">

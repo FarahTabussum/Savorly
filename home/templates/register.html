@@ -23,11 +23,6 @@
         <path d="M22.4 5c-3.4 1.1-5.1 3.7-5.1 7.2 0 2.1 1.2 3.5 3.1 3.7" />
         <path d="M22.4 5v12" />
       </svg>
-    {% else %}
-      <svg viewBox="0 0 32 32">
-        <path d="M16 4 26 8v7.2c0 6.4-4.2 10.4-10 12.8-5.8-2.4-10-6.4-10-12.8V8l10-4Z" />
-        <path d="m11.4 16 3 3 6.4-6.5" />
-      </svg>
     {% endif %}
   </span>
   <span>
@@ -65,7 +60,12 @@
     </div>
 
     <div class="form-field">
-      <label for="id_email">Email <span>Optional</span></label>
+      <label for="id_email">
+        Email
+        <span>
+          {% if role == 'chef' %}Required for approval{% else %}Optional{% endif %}
+        </span>
+      </label>
       <input
         type="email"
         name="email"
@@ -73,6 +73,7 @@
         value="{{ form_values.email|default:'' }}"
         placeholder="you@example.com"
         autocomplete="email"
+        {% if role == 'chef' %}required{% endif %}
         {% if errors.email %}aria-invalid="true" aria-describedby="email-error"{% endif %}
       />
       {% if errors.email %}<small class="field-error" id="email-error">{{ errors.email }}</small>{% endif %}
@@ -120,7 +121,13 @@
     Create my account <span aria-hidden="true">↗</span>
   </button>
 
-  <p class="form-assurance">By joining, you agree to share kindness, not just recipes.</p>
+  <p class="form-assurance">
+    {% if role == 'chef' %}
+      An admin reviews every chef application before chef tools are unlocked.
+    {% else %}
+      By joining, you agree to share kindness, not just recipes.
+    {% endif %}
+  </p>
 </form>
 
 <div class="auth-switch">

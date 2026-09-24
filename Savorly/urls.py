@@ -40,6 +40,8 @@ urlpatterns = [
     path("chef-table/", recipe_views.chefs_table, name="chef_table_hyphen"),
     path("chef_table/", recipe_views.chefs_table, name="chef_table_underscore"),
     path("chefs_table/", recipe_views.chefs_table, name="chefs_table_underscore"),
+    path("update_recipe/<int:pk>/", recipe_views.update_recipe, name="update_recipe"),
+    path("update-recipe/<int:pk>/", recipe_views.update_recipe, name="update_recipe_hyphen"),
     path("delete_recipe/<id>/", recipe_views.delete_recipe, name="delete_recipe"),
 ]
 

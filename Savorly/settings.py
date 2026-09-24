@@ -138,10 +138,30 @@ MEDIA_URL = '/media/'
 
 
 # Email
-# https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
+# https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-backends
 
-MAILERS = {
-    'default': {
-        'BACKEND': 'django.core.mail.backends.console.EmailBackend',
-    },
+# Gmail SMTP is used automatically when credentials are present. Without
+# credentials, local development safely falls back to the console backend.
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp.gmail.com")
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+_default_email_backend = (
+    "django.core.mail.backends.smtp.EmailBackend"
+    if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD
+    else "django.core.mail.backends.console.EmailBackend"
+)
+EMAIL_BACKEND = os.environ.get(
+    "DJANGO_EMAIL_BACKEND",
+    _default_email_backend,
+)
+EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "true").lower() in {
+    "1",
+    "true",
+    "yes",
 }
+DEFAULT_FROM_EMAIL = os.environ.get(
+    "DEFAULT_FROM_EMAIL",
+    EMAIL_HOST_USER or "Savorly <no-reply@savorly.local>",
+)
+PUBLIC_SITE_URL = os.environ.get("PUBLIC_SITE_URL", "http://localhost:8000")

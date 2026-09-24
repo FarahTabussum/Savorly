@@ -21,7 +21,7 @@
       <a
         class="site-navbar__link"
         href="{% url 'recipes' %}"
-        {% if request.resolver_match.url_name == 'recipes' or request.resolver_match.url_name == 'recipe_details' %}aria-current="page"{% endif %}
+        {% if request.resolver_match.url_name == 'recipes' or request.resolver_match.url_name == 'recipe_details' or request.resolver_match.url_name == 'update_recipe' or request.resolver_match.url_name == 'update_recipe_hyphen' %}aria-current="page"{% endif %}
         >Recipe</a
       >
       <a

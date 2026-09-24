@@ -17,7 +17,15 @@
 {% if form_error %}
   <div class="form-error-message" id="login-error" role="alert">
     <span aria-hidden="true">!</span>
-    {{ form_error }}
+    <span>{{ form_error }}</span>
+    {% if show_chef_reregistration %}
+      <a
+        class="form-error-message__action"
+        href="{% url 'register' 'chef' %}?username={{ form_values.username|urlencode }}"
+      >
+        Register as a chef again <span aria-hidden="true">→</span>
+      </a>
+    {% endif %}
   </div>
 {% endif %}
 
@@ -96,5 +104,12 @@
 <div class="auth-switch auth-switch--register">
   <p>New around here?</p>
   <a href="{% url 'home' %}">Choose your account <span aria-hidden="true">↗</span></a>
+</div>
+
+<div class="auth-switch auth-switch--admin-login">
+  <p>Administrator?</p>
+  <a href="{% url 'admin:login' %}"
+    >Use the secure admin login <span aria-hidden="true">→</span></a
+  >
 </div>
 {% endblock %}

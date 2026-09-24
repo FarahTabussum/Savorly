@@ -4,7 +4,7 @@ from .models import recipe
 
 
 class RecipeForm(forms.ModelForm):
-    """Form used by chefs to add a recipe.
+    """Form used by chefs to add or edit a recipe.
 
     The public model uses ``name`` while the recipe form has historically used
     ``recipe_name`` in its POST data.  Keeping that field name makes the form
@@ -33,6 +33,14 @@ class RecipeForm(forms.ModelForm):
                 attrs={"class": "form-control", "accept": "image/*"}
             ),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # ``recipe_name`` is the form-facing name for the model's ``name``
+        # field, so copy the existing value into the initial form data when a
+        # recipe is being edited.
+        if not self.is_bound and self.instance.pk:
+            self.initial.setdefault("recipe_name", self.instance.name)
 
     def save(self, commit=True):
         new_recipe = super().save(commit=False)

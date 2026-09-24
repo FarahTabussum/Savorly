@@ -1,13 +1,14 @@
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
+from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
-from django.contrib.auth.password_validation import validate_password
 from django.db import IntegrityError, transaction
 from django.http import Http404, JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_GET, require_POST
 
@@ -25,15 +26,8 @@ ROLE_DETAILS = {
     "chef": {
         "label": "Chef",
         "description": (
-            "Bring your recipes to the table and build a community of home cooks "
-            "who are ready to make your dishes."
-        ),
-    },
-    "admin": {
-        "label": "Admin",
-        "description": (
-            "Create a workspace account to help keep Savorly's recipes and "
-            "community running smoothly."
+            "Apply to bring your recipes to the table. Once approved, you can "
+            "build a community of home cooks ready to make your dishes."
         ),
     },
 }
@@ -51,7 +45,7 @@ def _role_from_request(request):
 def _landing_url_for(user):
     """Return the landing page for an authenticated account role."""
     profile = getattr(user, "profile", None)
-    if profile is not None and profile.role == Profile.Role.CHEF:
+    if profile is not None and profile.is_approved_chef:
         return reverse("recipes")
     return reverse("home")
 
@@ -76,12 +70,19 @@ def _role_details(role):
 
 def register(request, role):
     details = _role_details(role)
+    is_chef_application = role == Profile.Role.CHEF
 
     if request.user.is_authenticated:
         return redirect("home")
 
-    form_values = {"username": "", "email": ""}
+    form_values = {
+        "username": (
+            request.GET.get("username", "").strip() if is_chef_application else ""
+        ),
+        "email": "",
+    }
     errors = {}
+    removed_chef_profile = None
 
     if request.method == "POST":
         form_values = {
@@ -97,14 +98,30 @@ def register(request, role):
             errors["username"] = "Please choose a username."
         elif len(username) > 150:
             errors["username"] = "Username must be 150 characters or fewer."
-        elif not all(character.isalnum() or character in "@.+-_" for character in username):
+        elif not all(
+            character.isalnum() or character in "@.+-_" for character in username
+        ):
             errors["username"] = (
                 "Use only letters, numbers, and the characters @ . + - _."
             )
-        elif User.objects.filter(username__iexact=username).exists():
-            errors["username"] = "That username is already taken."
+        else:
+            existing_user = User.objects.filter(username__iexact=username).first()
+            if existing_user is not None:
+                existing_profile = getattr(existing_user, "profile", None)
+                if (
+                    is_chef_application
+                    and existing_profile is not None
+                    and existing_profile.is_removed_chef
+                ):
+                    removed_chef_profile = existing_profile
+                else:
+                    errors["username"] = "That username is already taken."
 
-        if email:
+        if not email and is_chef_application:
+            errors["email"] = (
+                "Enter an email address so we can confirm your approval."
+            )
+        elif email:
             try:
                 validate_email(email)
             except ValidationError:
@@ -126,15 +143,53 @@ def register(request, role):
         if not errors:
             try:
                 with transaction.atomic():
-                    user = User.objects.create_user(
-                        username=username,
-                        email=email,
-                        password=password,
-                    )
-                    Profile.objects.create(user=user, role=role)
+                    if removed_chef_profile is not None:
+                        profile = (
+                            Profile.objects.select_for_update()
+                            .select_related("user")
+                            .get(pk=removed_chef_profile.pk)
+                        )
+                        if not profile.is_removed_chef:
+                            raise IntegrityError(
+                                "Chef profile is no longer removable."
+                            )
+
+                        user = profile.user
+                        user.email = email
+                        user.set_password(password)
+                        user.is_active = False
+                        user.save()
+                        profile.request_chef_approval()
+                    else:
+                        user = User.objects.create_user(
+                            username=username,
+                            email=email,
+                            password=password,
+                            is_active=not is_chef_application,
+                        )
+                        Profile.objects.create(
+                            user=user,
+                            role=role,
+                            chef_approval_status=(
+                                Profile.ChefApprovalStatus.PENDING
+                                if is_chef_application
+                                else None
+                            ),
+                            chef_requested_at=(
+                                timezone.now() if is_chef_application else None
+                            ),
+                        )
             except IntegrityError:
                 errors["username"] = "That username is already taken."
             else:
+                if is_chef_application:
+                    messages.success(
+                        request,
+                        "Your chef application is awaiting admin approval. "
+                        "We’ll email you as soon as you can join the table.",
+                    )
+                    return redirect(f"{reverse('login')}?role=chef")
+
                 login(request, user)
                 messages.success(
                     request,
@@ -159,6 +214,7 @@ def login_view(request):
 
     form_values = {"username": ""}
     form_error = ""
+    show_chef_reregistration = False
     next_url = _safe_next_url(request)
     selected_role_value = _role_from_request(request)
     selected_role = (
@@ -175,7 +231,7 @@ def login_view(request):
         )
 
         if selected_role_value and not selected_role:
-            form_error = "Choose User, Chef, or Admin as your account type."
+            form_error = "Choose User or Chef as your account type."
         elif not form_values["username"] or not password:
             form_error = "Enter both your username and password."
         else:
@@ -185,11 +241,53 @@ def login_view(request):
                 password=password,
             )
             if user is None:
-                form_error = "That username or password doesn’t look right."
+                inactive_user = User.objects.filter(
+                    username=form_values["username"]
+                ).first()
+                if inactive_user and inactive_user.check_password(password):
+                    inactive_profile = getattr(inactive_user, "profile", None)
+                    if (
+                        inactive_profile is not None
+                        and inactive_profile.is_removed_chef
+                    ):
+                        form_error = (
+                            "This chef profile was removed. Register again to "
+                            "request a new chef account."
+                        )
+                        show_chef_reregistration = True
+                    elif (
+                        inactive_profile is not None
+                        and inactive_profile.is_chef
+                        and inactive_profile.chef_approval_status
+                        == Profile.ChefApprovalStatus.PENDING
+                    ):
+                        form_error = (
+                            "Your chef application is still awaiting admin approval."
+                        )
+                    else:
+                        form_error = "This account is not active."
+                else:
+                    form_error = "That username or password doesn’t look right."
             else:
                 profile = getattr(user, "profile", None)
                 account_role = profile.role if profile is not None else None
-                if (
+                if user.is_staff or account_role == Profile.Role.ADMIN:
+                    form_error = (
+                        "Administrator accounts must use the secure admin login."
+                    )
+                elif profile is not None and profile.is_removed_chef:
+                    form_error = (
+                        "This chef profile was removed. Register again to request "
+                        "a new chef account."
+                    )
+                    show_chef_reregistration = True
+                elif (
+                    profile is not None
+                    and profile.is_chef
+                    and not profile.is_approved_chef
+                ):
+                    form_error = "Your chef application has not been approved yet."
+                elif (
                     selected_role
                     and account_role
                     and account_role != selected_role
@@ -215,6 +313,7 @@ def login_view(request):
     context = {
         "form_values": form_values,
         "form_error": form_error,
+        "show_chef_reregistration": show_chef_reregistration,
         "next_url": next_url,
         "role_options": ROLE_OPTIONS,
         "role": selected_role,
