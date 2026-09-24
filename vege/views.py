@@ -60,6 +60,16 @@ def chefs_table(request):
 
 
 @login_required(login_url="login")
+def recipe_details(request, pk):
+    """Display one recipe with its complete description."""
+    if not _is_chef(request.user):
+        return _redirect_non_chef(request)
+
+    recipe_item = get_object_or_404(recipe, pk=pk)
+    return render(request, "recipe_details.html", {"recipe": recipe_item})
+
+
+@login_required(login_url="login")
 def delete_recipe(request, id):
     if not _is_chef(request.user):
         return _redirect_non_chef(request)

@@ -21,8 +21,11 @@ class ChefRecipeTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "recipe.html")
+        self.assertContains(response, 'class="site-navbar"', count=1)
         self.assertContains(response, "Add Recipe")
         self.assertContains(response, "Chef's Table")
+        self.assertContains(response, reverse("recipes"))
+        self.assertContains(response, reverse("chefs_table"))
 
     def test_recipe_name_and_description_are_required(self):
         response = self.client.post(reverse("recipes"), {})
@@ -56,10 +59,52 @@ class ChefRecipeTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "chefs_table.html")
+        self.assertContains(response, 'class="site-navbar"', count=1)
         self.assertContains(response, "Chef's Table")
+        self.assertContains(response, reverse("recipes"))
         self.assertContains(response, "Lemon Cake")
+        self.assertContains(response, "<strong>Lemon Cake</strong>")
+        self.assertContains(
+            response,
+            reverse("recipe_details", args=[recipe.objects.get().pk]),
+        )
         self.assertContains(response, "Bright and soft.")
         self.assertContains(response, "No image")
+
+    def test_table_description_is_limited_to_thirty_words(self):
+        description = " ".join(f"word{number}" for number in range(1, 41))
+        recipe.objects.create(name="Long Recipe", recipe_description=description)
+
+        response = self.client.get(reverse("chefs_table"))
+
+        expected_preview = " ".join(f"word{number}" for number in range(1, 31))
+        self.assertContains(response, expected_preview)
+        self.assertNotContains(response, "word31")
+
+    def test_recipe_details_shows_complete_recipe_in_order(self):
+        description = " ".join(f"word{number}" for number in range(1, 41))
+        recipe_item = recipe.objects.create(
+            name="Detailed Recipe",
+            recipe_description=description,
+        )
+
+        response = self.client.get(
+            reverse("recipe_details", args=[recipe_item.pk])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "recipe_details.html")
+        self.assertContains(response, 'class="site-navbar"', count=1)
+        self.assertEqual(response.context["recipe"], recipe_item)
+        self.assertContains(response, description)
+        self.assertContains(response, "No image")
+
+        content = response.content.decode()
+        name_position = content.index("<h1>Detailed Recipe</h1>")
+        image_position = content.index("recipe-details-media")
+        description_position = content.index("recipe-details-description")
+        self.assertLess(name_position, image_position)
+        self.assertLess(image_position, description_position)
 
     def test_non_chef_cannot_manage_recipes(self):
         user = User.objects.create_user(
@@ -72,6 +117,16 @@ class ChefRecipeTests(TestCase):
         response = self.client.get(reverse("recipes"))
 
         self.assertRedirects(response, reverse("home"))
+
+        existing_recipe = recipe.objects.create(
+            name="Chef only",
+            recipe_description="This page is chef only.",
+        )
+        details_response = self.client.get(
+            reverse("recipe_details", args=[existing_recipe.pk])
+        )
+        self.assertRedirects(details_response, reverse("home"))
+
         response = self.client.post(
             reverse("recipes"),
             {
@@ -80,4 +135,4 @@ class ChefRecipeTests(TestCase):
             },
         )
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(recipe.objects.count(), 0)
+        self.assertEqual(recipe.objects.count(), 1)

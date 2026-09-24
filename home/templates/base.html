@@ -27,7 +27,7 @@
       integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
       crossorigin="anonymous"
     />
-    <link rel="stylesheet" href="{% static 'home/css/site.css' %}" />
+    <link rel="stylesheet" href="{% static 'home/css/site.css' %}?v=20260924-2" />
   </head>
   <body class="{% block body_class %}{% endblock %}">
     {% if messages %}
@@ -43,6 +43,9 @@
       </div>
     {% endif %}
 
+    {% block navbar %}
+      {% include 'partials/site_navbar.html' %}
+    {% endblock %}
     {% block start %}{% endblock %}
 
     <script src="{% static 'home/js/site.js' %}"></script>

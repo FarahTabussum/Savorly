@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ recipe.name }} — Savorly{% endblock %}
+{% block body_class %}recipe-page recipe-details-page{% endblock %}
+
+{% block start %}
+<main class="recipe-details-shell">
+  <a class="recipe-details-back" href="{% url 'chefs_table' %}">
+    <span aria-hidden="true">←</span> Back to Chef's Table
+  </a>
+
+  <article class="recipe-details-card">
+    <header class="recipe-details-header">
+      <p class="eyebrow mb-2">Recipe details</p>
+      <h1>{{ recipe.name }}</h1>
+    </header>
+
+    <div class="recipe-details-media">
+      {% if recipe.recipe_image %}
+        <img
+          src="{{ recipe.recipe_image.url }}"
+          alt="{{ recipe.name }}"
+        />
+      {% else %}
+        <div class="recipe-details-placeholder" role="img" aria-label="No image provided">
+          <span aria-hidden="true">No image</span>
+        </div>
+      {% endif %}
+    </div>
+
+    <section class="recipe-details-description" aria-labelledby="recipe-description-heading">
+      <h2 id="recipe-description-heading">Recipe description</h2>
+      <div class="recipe-details-description__text">
+        {{ recipe.recipe_description|linebreaksbr }}
+      </div>
+    </section>
+  </article>
+</main>
+{% endblock %}

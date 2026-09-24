@@ -31,8 +31,15 @@
         {% for recipe in recipes %}
           <tr>
             <td>{{ forloop.counter }}</td>
-            <td>{{ recipe.name }}</td>
-            <td>{{ recipe.recipe_description }}</td>
+            <td>
+              <a
+                class="recipe-name-link"
+                href="{% url 'recipe_details' recipe.pk %}"
+              ><strong>{{ recipe.name }}</strong></a>
+            </td>
+            <td class="recipe-description-preview">
+              {{ recipe.recipe_description|truncatewords:30 }}
+            </td>
             <td>
               {% if recipe.recipe_image %}
                 <img

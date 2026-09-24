@@ -48,16 +48,22 @@ def _role_from_request(request):
     return (request.POST.get("role") or request.GET.get("role") or "").strip()
 
 
+def _landing_url_for(user):
+    """Return the landing page for an authenticated account role."""
+    profile = getattr(user, "profile", None)
+    if profile is not None and profile.role == Profile.Role.CHEF:
+        return reverse("recipes")
+    return reverse("home")
+
+
+def _login_destination(user, next_url):
+    """Use a role-specific landing page when no explicit destination is given."""
+    if next_url == reverse("home"):
+        return _landing_url_for(user)
+    return next_url
+
+
 def home(request):
-    # Chefs use the recipe dashboard as their landing page.  The existing home
-    # URL remains the landing URL for users and administrators.
-    if request.user.is_authenticated:
-        profile = getattr(request.user, "profile", None)
-        if profile is not None and profile.role == Profile.Role.CHEF:
-            from vege.views import recipes
-
-            return recipes(request)
-
     return render(request, "index.html")
 
 
@@ -134,7 +140,7 @@ def register(request, role):
                     request,
                     f"Welcome to Savorly, {details['label']}! Your account is ready.",
                 )
-                return redirect("home")
+                return redirect(_landing_url_for(user))
 
     context = {
         **details,
@@ -203,7 +209,7 @@ def login_view(request):
                         f"Welcome back, {user.first_name or user.username}! "
                         f"You’re signing in as {role_label}.",
                     )
-                    return redirect(next_url)
+                    return redirect(_login_destination(user, next_url))
 
     selected_role_details = ROLE_DETAILS.get(selected_role, {})
     context = {

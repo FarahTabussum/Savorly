@@ -20,6 +20,27 @@ class AccountFlowTests(TestCase):
         self.assertContains(response, reverse("register", args=["user"]))
         self.assertContains(response, reverse("register", args=["chef"]))
         self.assertContains(response, reverse("register", args=["admin"]))
+        self.assertContains(response, 'class="site-navbar"', count=1)
+        self.assertContains(response, "Recipe")
+        self.assertContains(response, reverse("recipes"))
+        self.assertContains(response, reverse("chefs_table"))
+
+    def test_authenticated_chef_still_sees_dashboard_at_root(self):
+        user = User.objects.create_user(
+            username="dashboard_chef",
+            password="Savorly123!",
+        )
+        Profile.objects.create(user=user, role=Profile.Role.CHEF)
+        self.client.force_login(user)
+
+        response = self.client.get(reverse("home"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "index.html")
+        self.assertContains(response, "Good food,")
+        self.assertContains(response, "Recipe")
+        self.assertContains(response, reverse("recipes"))
+        self.assertNotContains(response, "Add Recipe")
 
     def test_registration_page_shows_selected_account_type(self):
         for role, label in (
@@ -32,6 +53,7 @@ class AccountFlowTests(TestCase):
 
                 self.assertEqual(response.context["role_label"], label)
                 self.assertTrue(response.context["role_description"])
+                self.assertContains(response, 'class="site-navbar"', count=1)
                 self.assertContains(response, "You’re joining as")
                 self.assertContains(response, label)
                 self.assertContains(response, f"{reverse('login')}?role={role}")
@@ -52,6 +74,21 @@ class AccountFlowTests(TestCase):
         self.assertTrue(user.check_password("Savorly123!"))
         self.assertEqual(user.profile.role, Profile.Role.USER)
         self.assertEqual(int(self.client.session["_auth_user_id"]), user.pk)
+
+    def test_chef_registration_lands_on_recipe_page(self):
+        response = self.client.post(
+            reverse("register", args=["chef"]),
+            {
+                "username": "new_chef",
+                "email": "chef@example.com",
+                "password1": "Savorly123!",
+                "password2": "Savorly123!",
+            },
+        )
+
+        self.assertRedirects(response, reverse("recipes"))
+        new_chef = User.objects.get(username="new_chef")
+        self.assertEqual(new_chef.profile.role, Profile.Role.CHEF)
 
     def test_user_can_register_with_password_similar_to_username(self):
         response = self.client.post(
@@ -85,7 +122,7 @@ class AccountFlowTests(TestCase):
         self.assertContains(response, "That username is already taken.", status_code=400)
         self.assertEqual(User.objects.filter(username="ALREADY_HERE").count(), 0)
 
-    def test_existing_user_can_log_in(self):
+    def test_existing_chef_is_redirected_to_recipe_page_after_login(self):
         user = User.objects.create_user(username="home_chef", password="Savorly123!")
         Profile.objects.create(user=user, role=Profile.Role.CHEF)
 
@@ -94,13 +131,30 @@ class AccountFlowTests(TestCase):
             {"username": "home_chef", "password": "Savorly123!"},
         )
 
-        self.assertRedirects(response, reverse("home"))
+        self.assertRedirects(response, reverse("recipes"))
         self.assertEqual(int(self.client.session["_auth_user_id"]), user.pk)
+
+    def test_explicit_login_destination_is_preserved_for_chef(self):
+        user = User.objects.create_user(username="next_chef", password="Savorly123!")
+        Profile.objects.create(user=user, role=Profile.Role.CHEF)
+        destination = f"{reverse('chefs_table')}?from=login"
+
+        response = self.client.post(
+            reverse("login"),
+            {
+                "username": "next_chef",
+                "password": "Savorly123!",
+                "next": destination,
+            },
+        )
+
+        self.assertRedirects(response, destination)
 
     def test_login_page_offers_all_account_types(self):
         response = self.client.get(reverse("login"))
 
         self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'class="site-navbar"', count=1)
         self.assertContains(response, "Who are you signing in as?")
         for role in (Profile.Role.USER, Profile.Role.CHEF, Profile.Role.ADMIN):
             self.assertContains(response, f'value="{role}"')

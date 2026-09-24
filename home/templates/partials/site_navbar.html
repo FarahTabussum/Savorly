@@ -1,0 +1,51 @@
+<nav class="site-navbar" aria-label="Main navigation">
+  <div class="site-navbar__inner">
+    <a class="brand" href="{% url 'home' %}" aria-label="Savorly home">
+      <span class="brand__mark" aria-hidden="true">
+        <svg viewBox="0 0 48 48" role="img">
+          <path d="M14 29.5c0-9.4 6.2-15.5 20-16.5-.4 13.5-6.4 20.3-16.2 20.3" />
+          <path d="M12 35c3.8-7.4 8.4-11.6 18.4-15.7" />
+          <path d="M13 13v22" />
+        </svg>
+      </span>
+      <span class="brand__word">savorly</span>
+    </a>
+
+    <div class="site-navbar__links" aria-label="Savorly pages">
+      <a
+        class="site-navbar__link"
+        href="{% url 'home' %}"
+        {% if request.resolver_match.url_name == 'home' %}aria-current="page"{% endif %}
+        >Home</a
+      >
+      <a
+        class="site-navbar__link"
+        href="{% url 'recipes' %}"
+        {% if request.resolver_match.url_name == 'recipes' or request.resolver_match.url_name == 'recipe_details' %}aria-current="page"{% endif %}
+        >Recipe</a
+      >
+      <a
+        class="site-navbar__link"
+        href="{% url 'chefs_table' %}"
+        {% if request.resolver_match.url_name == 'chefs_table' %}aria-current="page"{% endif %}
+        >Chef's Table</a
+      >
+    </div>
+
+    <div class="site-navbar__account">
+      {% if user.is_authenticated %}
+        <span class="welcome-copy"
+          >Welcome, {{ user.first_name|default:user.username }}</span
+        >
+        <form action="{% url 'logout' %}" method="post">
+          {% csrf_token %}
+          <button class="text-button" type="submit">Log out</button>
+        </form>
+      {% else %}
+        <a class="button button--ink button--small" href="{% url 'login' %}"
+          >Log in</a
+        >
+      {% endif %}
+    </div>
+  </div>
+</nav>

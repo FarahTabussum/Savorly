@@ -33,6 +33,7 @@ urlpatterns = [
     path("logout/", home_views.logout_view, name="logout"),
     path("health", home_views.health, name="health"),
     path("recipes/", recipe_views.recipes, name="recipes"),
+    path("recipes/<int:pk>/", recipe_views.recipe_details, name="recipe_details"),
     path("chefs-table/", recipe_views.chefs_table, name="chefs_table"),
     # Both names point to the canonical URL so either naming convention works.
     path("chefs-table/", recipe_views.chefs_table, name="chef_table"),
