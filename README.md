@@ -13,7 +13,7 @@ The project uses Django's built-in authentication and admin systems, SQLite for 
 - Current-page highlighting in the navigation.
 - Welcome message and CSRF-protected logout button for signed-in users.
 - Responsive layout for desktop, tablet, and mobile screens.
-- Semantic headings, labeled forms, keyboard focus styles, accessible error states, image alternative text, and an accessible table caption.
+- Semantic headings, labeled forms, keyboard focus styles, accessible error states, image alternative text, an accessible table caption, and reduced-motion support.
 - Dismissible success, error, and informational messages.
 - Custom Savorly branding, favicon, hero image, and theme.
 
@@ -61,6 +61,8 @@ The Django admin is branded as **Savorly administration** and provides:
 - Email delivery failures reported to the administrator without rolling back a successful approval.
 - Protection against manually adding or deleting profiles from these community profile admin pages.
 - Removed chef profiles are hidden from the normal chef-profile list.
+- Django's built-in user and group administration remains available for accounts managed outside public registration.
+- Recipe records are not registered in the Django admin.
 
 The model supports `Pending approval`, `Approved`, `Rejected`, and `Removed` states. The current admin actions implement approval, resend, and removal; there is no dedicated reject action.
 
@@ -72,19 +74,20 @@ All recipe tools currently require an **approved chef** account.
   - a required name of up to 100 characters,
   - a required full description, and
   - an optional uploaded image.
-- Store uploaded images under `media/recipe_images/`.
+- Store uploaded images under `media/recipe_images/`, with browser-side `image/*` filtering and Pillow-backed image validation.
 - Automatically associate newly created recipes with the signed-in chef.
-- Browse every submitted recipe on the Chef's Table, newest first.
+- Browse every submitted recipe on the Chef's Table, newest first by descending database ID.
 - Show the total recipe count and provide an empty-state call to action.
 - Preview descriptions to 30 words in the recipe table.
-- View a recipe's complete description, image, and author on a dedicated details page.
+- View a recipe's complete description with line breaks, image, and author on a dedicated details page.
 - Graceful "No image" placeholders for recipes without an uploaded image.
 - Update only recipes owned by the signed-in chef.
-- Preserve an existing image when editing unless a replacement is submitted.
+- Preserve an existing image when editing unless a replacement is submitted, with a clear control for removing it.
 - Hide update and delete actions for other chefs' recipes.
 - Prevent regular users and other non-chef accounts from accessing recipe management pages.
 - Return helpful Django messages after recipe creation, updates, and deletion.
 - Legacy route aliases are retained for Chef's Table and recipe update URLs.
+- Legacy POST field names (`name` and `description`) are accepted alongside the current `recipe_name` and `recipe_description` fields.
 
 ### Email notifications
 
@@ -101,25 +104,26 @@ Chef approval emails are sent through Django's email framework.
 - `GET /health` returns HTTP 200 with:
 
 ```json
-{"status": "ok"}
+{ "status": "ok" }
 ```
 
 - Other HTTP methods are rejected.
+- This is an application-liveness check only; it does not verify database connectivity, migration state, media storage, static files, or SMTP.
 
 ## Technology
 
-| Component | Technology |
-| --- | --- |
-| Backend | Django 6.1.1 |
-| Language | Python 3.13 (verified locally) |
-| Database | SQLite |
-| Authentication | Django authentication and sessions |
-| Admin | Django admin |
-| Templates | Django templates |
-| UI | Bootstrap 5.3.8 CDN, custom CSS, vanilla JavaScript |
-| Fonts | Google Fonts: DM Sans and DM Serif Display |
-| Images | Django `ImageField` with Pillow 12.3.0 (verified locally) |
-| Email | Django SMTP/console email backends |
+| Component      | Technology                                                |
+| -------------- | --------------------------------------------------------- |
+| Backend        | Django 6.1.1                                              |
+| Language       | Python 3.13 (verified locally)                            |
+| Database       | SQLite                                                    |
+| Authentication | Django authentication and sessions                        |
+| Admin          | Django admin                                              |
+| Templates      | Django templates                                          |
+| UI             | Bootstrap 5.3.8 CDN, custom CSS, vanilla JavaScript       |
+| Fonts          | Google Fonts: DM Sans and DM Serif Display                |
+| Images         | Django `ImageField` with Pillow 12.3.0 (verified locally) |
+| Email          | Django SMTP/console email backends                        |
 
 > The repository does not currently include a `requirements.txt` or `pyproject.toml`. Install the versions listed above, or compatible versions supported by your environment.
 
@@ -214,20 +218,20 @@ Open <http://localhost:8000/>.
 
 ## URL reference
 
-| URL | Methods | Access | Purpose |
-| --- | --- | --- | --- |
-| `/` | GET | Public | Landing and account-type selection |
-| `/register/user/` | GET, POST | Public | Register a regular user |
-| `/register/chef/` | GET, POST | Public | Apply for chef access |
-| `/login/` | GET, POST | Public | User/chef login |
-| `/logout/` | POST | Signed in | Sign out |
-| `/health` | GET | Public | JSON health check |
-| `/recipes/` | GET, POST | Approved chef | Add a recipe |
-| `/chefs-table/` | GET | Approved chef | Browse community recipes |
-| `/recipes/<id>/` | GET | Approved chef | View recipe details |
-| `/update_recipe/<id>/` | GET, POST | Owning chef | Edit a recipe |
-| `/delete_recipe/<id>/` | GET | Owning chef | Delete a recipe |
-| `/admin/` | Standard admin URLs | Staff/admin | Manage users, chefs, and applications |
+| URL                    | Methods             | Access        | Purpose                               |
+| ---------------------- | ------------------- | ------------- | ------------------------------------- |
+| `/`                    | GET                 | Public        | Landing and account-type selection    |
+| `/register/user/`      | GET, POST           | Public        | Register a regular user               |
+| `/register/chef/`      | GET, POST           | Public        | Apply for chef access                 |
+| `/login/`              | GET, POST           | Public        | User/chef login                       |
+| `/logout/`             | POST                | Signed in     | Sign out                              |
+| `/health`              | GET                 | Public        | JSON health check                     |
+| `/recipes/`            | GET, POST           | Approved chef | Add a recipe                          |
+| `/chefs-table/`        | GET                 | Approved chef | Browse community recipes              |
+| `/recipes/<id>/`       | GET                 | Approved chef | View recipe details                   |
+| `/update_recipe/<id>/` | GET, POST           | Owning chef   | Edit a recipe                         |
+| `/delete_recipe/<id>/` | GET                 | Owning chef   | Delete a recipe                       |
+| `/admin/`              | Standard admin URLs | Staff/admin   | Manage users, chefs, and applications |
 
 Unauthenticated users who open a protected page are redirected to login. Signed-in non-chefs are redirected to the home page with an explanatory message.
 
@@ -235,16 +239,16 @@ Unauthenticated users who open a protected page are redirected to login. Signed-
 
 The project reads email settings directly from environment variables. It does not automatically load a `.env` file.
 
-| Variable | Default | Description |
-| --- | --- | --- |
-| `EMAIL_HOST` | `smtp.gmail.com` | SMTP server |
-| `EMAIL_PORT` | `587` | SMTP port |
-| `EMAIL_HOST_USER` | Empty | SMTP account/email address |
-| `EMAIL_HOST_PASSWORD` | Empty | SMTP password or app password |
-| `EMAIL_USE_TLS` | `true` | Enables TLS; accepts `1`, `true`, or `yes` |
-| `DJANGO_EMAIL_BACKEND` | Automatically selected | Optional Django email backend override |
-| `DEFAULT_FROM_EMAIL` | SMTP user or local fallback | Sender shown in approval emails |
-| `PUBLIC_SITE_URL` | `http://localhost:8000` | Base URL used in chef sign-in links |
+| Variable               | Default                     | Description                                |
+| ---------------------- | --------------------------- | ------------------------------------------ |
+| `EMAIL_HOST`           | `smtp.gmail.com`            | SMTP server                                |
+| `EMAIL_PORT`           | `587`                       | SMTP port                                  |
+| `EMAIL_HOST_USER`      | Empty                       | SMTP account/email address                 |
+| `EMAIL_HOST_PASSWORD`  | Empty                       | SMTP password or app password              |
+| `EMAIL_USE_TLS`        | `true`                      | Enables TLS; accepts `1`, `true`, or `yes` |
+| `DJANGO_EMAIL_BACKEND` | Automatically selected      | Optional Django email backend override     |
+| `DEFAULT_FROM_EMAIL`   | SMTP user or local fallback | Sender shown in approval emails            |
+| `PUBLIC_SITE_URL`      | `http://localhost:8000`     | Base URL used in chef sign-in links        |
 
 ### Gmail helper (Windows PowerShell)
 
@@ -278,96 +282,3 @@ Leave the SMTP username and password unset. Django will use the console email ba
 - Optional author reference to Django's `User`.
 - The author is set automatically for newly posted recipes.
 - If an author account is later deleted, the recipe remains available with an unknown author.
-
-## Project structure
-
-```text
-Savorly/
-├── Savorly/                  # Django project configuration
-│   ├── settings.py           # Database, email, static/media, security settings
-│   ├── urls.py               # Root URL configuration
-│   ├── asgi.py               # ASGI entry point
-│   └── wsgi.py               # WSGI entry point
-├── home/                     # Landing page, authentication, profiles, chef approval
-│   ├── admin.py              # User/chef profile administration
-│   ├── emails.py             # Chef approval email
-│   ├── models.py             # Profile and approval workflow
-│   ├── views.py              # Registration, login, logout, health endpoint
-│   ├── templates/            # Public and authentication templates
-│   ├── static/               # CSS, JavaScript, images, and favicon
-│   └── migrations/           # Profile and approval migrations
-├── vege/                     # Chef recipe features
-│   ├── forms.py              # Recipe create/update form
-│   ├── models.py             # Recipe model
-│   ├── views.py              # Chef-scoped recipe CRUD
-│   ├── templates/            # Add, table, details, and update pages
-│   └── migrations/           # Recipe migrations and legacy-owner backfill
-├── scripts/
-│   └── configure_gmail_email.ps1
-├── media/
-│   └── recipe_images/        # Uploaded recipe images
-├── db.sqlite3                # Local SQLite database
-└── manage.py
-```
-
-## Testing and validation
-
-Run the complete test suite:
-
-```powershell
-python manage.py test
-```
-
-Run Django's system checks:
-
-```powershell
-python manage.py check
-```
-
-Check for missing migrations without writing files:
-
-```powershell
-python manage.py makemigrations --check --dry-run
-```
-
-The automated tests cover:
-
-- Landing-page links and account choices.
-- User registration and login.
-- Duplicate usernames and validation failures.
-- Chef application, approval, email, removal, and reapplication.
-- Role mismatch and administrator login rules.
-- Safe post-login redirects and POST-only logout.
-- Health endpoint behavior.
-- Recipe validation, image-optional creation, listing, and details.
-- Thirty-word table previews.
-- Recipe ownership enforcement.
-- Non-chef access restrictions.
-
-At the time this README was added, all **34 tests** pass, `manage.py check` reports no issues, and no model migrations are missing.
-
-## Current scope and implementation notes
-
-- Recipe browsing and management are implemented for approved chefs only. Regular users can currently register, sign in, and sign out, but do not have implemented favorite-saving, meal-planning, commenting, rating, search, or profile-management screens.
-- Public registration supports User and Chef roles only.
-- The site uses server-rendered pages; there is no REST or GraphQL API.
-- Uploaded media is stored on the local filesystem. Django serves it directly only while `DEBUG=True`.
-- Recipe deletion is currently initiated by a direct `GET` link and has no confirmation page. A production-hardening improvement would be a confirmation form using `POST`.
-- The checked-in settings are development-oriented: `DEBUG=True`, an empty `ALLOWED_HOSTS`, and a development secret key are hard-coded.
-
-## Production checklist
-
-Before deploying Savorly:
-
-1. Set `DEBUG=False`.
-2. Replace `SECRET_KEY` with a secure environment-provided value.
-3. Configure `ALLOWED_HOSTS` and HTTPS.
-4. Set secure cookie and HTTPS redirect settings.
-5. Run `python manage.py migrate` during deployment.
-6. Run `python manage.py collectstatic` and serve `staticfiles/` through the web server or CDN.
-7. Configure durable media storage if uploads must survive deployment replacement.
-8. Set all SMTP variables and use a dedicated transactional email account/provider.
-9. Set `PUBLIC_SITE_URL` to the public HTTPS origin.
-10. Use a production WSGI/ASGI server and process manager.
-11. Review SQLite concurrency and backup requirements, or migrate to a production database.
-12. Add confirmation and `POST` handling for destructive actions before public deployment.
