@@ -1,0 +1,100 @@
+{% extends 'auth_layout.html' %}
+
+{% block title %}Log in to Savorly{% endblock %}
+
+{% block auth_content %}
+<div class="auth-form-heading auth-form-heading--login">
+  <span class="auth-form-heading__step">Welcome back · 02</span>
+  <h1>Come on in.<br /><em>Your recipes missed you.</em></h1>
+  <p>Log in to return to your Savorly kitchen.</p>
+</div>
+
+<div class="login-welcome">
+  <span aria-hidden="true">✦</span>
+  <p><strong>Welcome to your kitchen</strong>Your saved recipes and new ideas are waiting.</p>
+</div>
+
+{% if form_error %}
+  <div class="form-error-message" id="login-error" role="alert">
+    <span aria-hidden="true">!</span>
+    {{ form_error }}
+  </div>
+{% endif %}
+
+<form class="auth-form auth-form--login" method="post" action="{% url 'login' %}" novalidate>
+  {% csrf_token %}
+  <input type="hidden" name="next" value="{{ next_url }}" />
+
+  <fieldset class="login-role-picker">
+    <legend class="login-role-picker__heading">
+      <span>Account type</span>
+      <strong>Who are you signing in as?</strong>
+      {% if selected_role_label %}
+        <small class="login-role-picker__selected">
+          You’re signing in as <strong>{{ selected_role_label }}</strong>.
+        </small>
+      {% else %}
+        <small>Choose the role saved to your Savorly account.</small>
+      {% endif %}
+    </legend>
+    <div class="login-role-options" role="radiogroup" aria-label="Account type">
+      {% for role_option in role_options %}
+        <label class="login-role-option{% if selected_role == role_option.value %} is-selected{% endif %}">
+          <input
+            type="radio"
+            name="role"
+            value="{{ role_option.value }}"
+            {% if selected_role == role_option.value %}checked{% endif %}
+          />
+          <span class="login-role-option__dot" aria-hidden="true"></span>
+          <span>{{ role_option.label }}</span>
+        </label>
+      {% endfor %}
+    </div>
+  </fieldset>
+
+  <div class="form-field">
+    <label for="id_username">Username</label>
+    <input
+      type="text"
+      name="username"
+      id="id_username"
+      value="{{ form_values.username|default:'' }}"
+      placeholder="Enter your username"
+      autocomplete="username"
+      maxlength="150"
+      required
+      autofocus
+      {% if form_error %}aria-invalid="true" aria-describedby="login-error"{% endif %}
+    />
+  </div>
+
+  <div class="form-field">
+    <div class="label-row">
+      <label for="id_password">Password</label>
+      <span>Keep it secret</span>
+    </div>
+    <div class="password-field">
+      <input
+        type="password"
+        name="password"
+        id="id_password"
+        placeholder="Enter your password"
+        autocomplete="current-password"
+        required
+        {% if form_error %}aria-invalid="true" aria-describedby="login-error"{% endif %}
+      />
+      <button type="button" data-password-toggle="id_password" aria-label="Show password">Show</button>
+    </div>
+  </div>
+
+  <button class="button button--sage button--wide" type="submit">
+    Log in to Savorly <span aria-hidden="true">→</span>
+  </button>
+</form>
+
+<div class="auth-switch auth-switch--register">
+  <p>New around here?</p>
+  <a href="{% url 'home' %}">Choose your account <span aria-hidden="true">↗</span></a>
+</div>
+{% endblock %}

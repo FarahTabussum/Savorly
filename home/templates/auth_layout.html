@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block body_class %}auth-body{% endblock %}
+
+{% block start %}
+<div class="auth-page">
+  <header class="auth-header">
+    <a class="brand brand--dark" href="{% url 'home' %}" aria-label="Savorly home">
+      <span class="brand__mark" aria-hidden="true">
+        <svg viewBox="0 0 48 48" role="img">
+          <path d="M14 29.5c0-9.4 6.2-15.5 20-16.5-.4 13.5-6.4 20.3-16.2 20.3" />
+          <path d="M12 35c3.8-7.4 8.4-11.6 18.4-15.7" />
+          <path d="M13 13v22" />
+        </svg>
+      </span>
+      <span class="brand__word">savorly</span>
+    </a>
+    <a class="auth-back" href="{% url 'home' %}">
+      <span aria-hidden="true">←</span> Back to dashboard
+    </a>
+  </header>
+
+  <main class="auth-layout">
+    <section class="auth-story" aria-labelledby="auth-story-title">
+      <img
+        src="{% static 'home/images/kitchen-hero.jpg' %}"
+        alt=""
+        aria-hidden="true"
+      />
+      <div class="auth-story__overlay"></div>
+      <div class="auth-story__content">
+        <span class="auth-story__kicker">A recipe is better shared</span>
+        <h2 id="auth-story-title">Your table has<br />room for <em>you.</em></h2>
+        <p>
+          Join a community that turns everyday ingredients into stories worth
+          passing down.
+        </p>
+        <ul class="auth-story__benefits" aria-label="Savorly benefits">
+          <li><span>01</span> Save the recipes you love</li>
+          <li><span>02</span> Share your kitchen knowledge</li>
+          <li><span>03</span> Discover something delicious</li>
+        </ul>
+      </div>
+      <p class="auth-story__quote">“Life is what you make it, so let’s make something tasty.”</p>
+    </section>
+
+    <section class="auth-form-panel" aria-label="Account form">
+      <div class="auth-form-panel__inner">
+        {% block auth_content %}{% endblock %}
+      </div>
+    </section>
+  </main>
+</div>
+{% endblock %}

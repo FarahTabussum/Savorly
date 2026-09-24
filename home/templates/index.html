@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Savorly — Choose your kitchen community{% endblock %}
+{% block body_class %}landing-body{% endblock %}
+{% block start %}
+
+<div class="landing-page">
+  <header class="landing-header">
+    <a class="brand" href="{% url 'home' %}" aria-label="Savorly home">
+      <span class="brand__mark" aria-hidden="true">
+        <svg viewBox="0 0 48 48" role="img">
+          <path
+            d="M14 29.5c0-9.4 6.2-15.5 20-16.5-.4 13.5-6.4 20.3-16.2 20.3"
+          />
+          <path d="M12 35c3.8-7.4 8.4-11.6 18.4-15.7" />
+          <path d="M13 13v22" />
+        </svg>
+      </span>
+      <span class="brand__word">savorly</span>
+    </a>
+
+    <div class="landing-header__action">
+      {% if user.is_authenticated %}
+      <span class="welcome-copy"
+        >Welcome back, {{ user.first_name|default:user.username }}</span
+      >
+      <form action="{% url 'logout' %}" method="post">
+        {% csrf_token %}
+        <button class="text-button" type="submit">Log out</button>
+      </form>
+      {% else %}
+      <span class="header-prompt">Already sharing a recipe?</span>
+      <a class="button button--ink button--small" href="{% url 'login' %}"
+        >Log in</a
+      >
+      {% endif %}
+    </div>
+  </header>
+
+  <main class="landing-main">
+    <section class="hero-copy" aria-labelledby="landing-title">
+      <div class="eyebrow">
+        <span class="eyebrow__spark" aria-hidden="true">✦</span>
+        Recipes with a story
+      </div>
+      <h1 id="landing-title">Good food,<br /><em>better shared.</em></h1>
+      <p class="hero-copy__intro">
+        Find inspiration, swap family favorites, and meet people who believe
+        every recipe deserves a place at the table.
+      </p>
+
+      <div class="role-heading">
+        <p>Choose your seat at the table</p>
+        <span>Step 1 of 2</span>
+      </div>
+
+      <div class="role-grid" aria-label="Choose an account type">
+        <a class="role-card role-card--user" href="{% url 'register' 'user' %}">
+          <span class="role-card__topline">
+            <span class="role-card__icon" aria-hidden="true">
+              <svg viewBox="0 0 32 32">
+                <path d="M16 14.2a5.4 5.4 0 1 0 0-10.8 5.4 5.4 0 0 0 0 10.8Z" />
+                <path d="M5.5 28.2c.8-6.1 4.4-9.4 10.5-9.4s9.7 3.3 10.5 9.4" />
+              </svg>
+            </span>
+            <span class="role-card__number">01</span>
+          </span>
+          <span class="role-card__copy">
+            <strong>User</strong>
+            <small>Save favorites and cook along.</small>
+          </span>
+          <span class="role-card__arrow" aria-hidden="true">↗</span>
+        </a>
+
+        <a class="role-card role-card--chef" href="{% url 'register' 'chef' %}">
+          <span class="role-card__topline">
+            <span class="role-card__icon" aria-hidden="true">
+              <svg viewBox="0 0 32 32">
+                <path d="M11 4v8.2a2.6 2.6 0 0 0 5.2 0V4" />
+                <path d="M13.6 13.8V28" />
+                <path
+                  d="M22.4 5c-3.4 1.1-5.1 3.7-5.1 7.2 0 2.1 1.2 3.5 3.1 3.7"
+                />
+                <path d="M22.4 5v12" />
+              </svg>
+            </span>
+            <span class="role-card__number">02</span>
+          </span>
+          <span class="role-card__copy">
+            <strong>Chef</strong>
+            <small>Share your craft with everyone.</small>
+          </span>
+          <span class="role-card__arrow" aria-hidden="true">↗</span>
+        </a>
+
+        <a
+          class="role-card role-card--admin"
+          href="{% url 'register' 'admin' %}"
+        >
+          <span class="role-card__topline">
+            <span class="role-card__icon" aria-hidden="true">
+              <svg viewBox="0 0 32 32">
+                <path
+                  d="M16 4 26 8v7.2c0 6.4-4.2 10.4-10 12.8-5.8-2.4-10-6.4-10-12.8V8l10-4Z"
+                />
+                <path d="m11.4 16 3 3 6.4-6.5" />
+              </svg>
+            </span>
+            <span class="role-card__number">03</span>
+          </span>
+          <span class="role-card__copy">
+            <strong>Admin</strong>
+            <small>Keep the community thriving.</small>
+          </span>
+          <span class="role-card__arrow" aria-hidden="true">↗</span>
+        </a>
+      </div>
+
+      <div class="hero-footnote">
+        <div class="avatar-stack" aria-hidden="true">
+          <span>MK</span><span>JL</span><span>AR</span>
+        </div>
+        <p><strong>Made for home cooks.</strong> No gatekeeping, ever.</p>
+      </div>
+    </section>
+
+    <section class="hero-visual" aria-label="A Savorly kitchen">
+      <div class="hero-visual__sun" aria-hidden="true"></div>
+      <div class="hero-visual__frame">
+        <img
+          src="{% static 'home/images/kitchen-hero.jpg' %}"
+          alt="Friends preparing a fresh meal together in a warm kitchen"
+        />
+        <div class="hero-visual__wash" aria-hidden="true"></div>
+        <div class="recipe-stamp" aria-hidden="true">
+          <span>Today’s pick</span>
+          <strong>Make it.<br />Share it.</strong>
+          <svg viewBox="0 0 60 60">
+            <path d="M12 38c8-13 18-19 35-23-3 17-13 27-28 27" />
+            <path d="M14 43c8-10 17-16 30-22" />
+          </svg>
+        </div>
+      </div>
+
+      <div class="community-note">
+        <span class="community-note__icon" aria-hidden="true">♥</span>
+        <div>
+          <strong>12,000+ recipes</strong>
+          <small>and a new one every day</small>
+        </div>
+      </div>
+
+      <span class="hero-visual__caption">Cook slowly. Share generously.</span>
+    </section>
+  </main>
+</div>
+{% endblock %}

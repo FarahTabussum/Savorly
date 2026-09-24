@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block title %}Add Recipe — Savorly{% endblock %}
+{% block body_class %}recipe-page{% endblock %}
+
+{% block start %}
+<main class="container py-4">
+  <form
+    class="container col-8 p-3 card shadow-lg"
+    method="POST"
+    action="{% url 'recipes' %}"
+    enctype="multipart/form-data"
+  >
+    {% csrf_token %}
+    <div class="mb-3">
+      <h1 class="text-start">Add Recipe</h1>
+      <p class="text-muted mb-4">Share a dish with the Savorly table.</p>
+    </div>
+
+    {% if form.non_field_errors %}
+      <div class="alert alert-danger" role="alert">
+        {{ form.non_field_errors }}
+      </div>
+    {% endif %}
+
+    <div class="mb-3">
+      <label for="id_recipe_name" class="form-label">Recipe Name</label>
+      <input
+        type="text"
+        class="form-control"
+        name="{{ form.recipe_name.html_name }}"
+        id="id_recipe_name"
+        value="{{ form.recipe_name.value|default_if_none:'' }}"
+        maxlength="100"
+        required
+        {% if form.recipe_name.errors %}aria-invalid="true"{% endif %}
+      />
+      {% if form.recipe_name.errors %}
+        <div class="form-text text-danger">{{ form.recipe_name.errors }}</div>
+      {% endif %}
+    </div>
+
+    <div class="mb-3">
+      <label for="id_recipe_description" class="form-label">Recipe Description</label>
+      {{ form.recipe_description }}
+      {% if form.recipe_description.errors %}
+        <div class="form-text text-danger">{{ form.recipe_description.errors }}</div>
+      {% endif %}
+    </div>
+
+    <div class="mb-3">
+      <label for="id_recipe_image" class="form-label">
+        Recipe Image <span class="text-muted fw-normal">(optional)</span>
+      </label>
+      {{ form.recipe_image }}
+      {% if form.recipe_image.errors %}
+        <div class="form-text text-danger">{{ form.recipe_image.errors }}</div>
+      {% endif %}
+    </div>
+
+    <button type="submit" class="btn btn-primary">Add Recipe</button>
+  </form>
+
+  <div class="container col-8 text-center mt-4 pb-2">
+    <a class="btn btn-outline-secondary" href="{% url 'chefs_table' %}">
+      Chef's Table
+    </a>
+  </div>
+</main>
+{% endblock %}

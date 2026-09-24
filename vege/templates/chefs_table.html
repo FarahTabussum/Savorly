@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block title %}Chef's Table — Savorly{% endblock %}
+{% block body_class %}recipe-page{% endblock %}
+
+{% block start %}
+<main class="container pb-4">
+  <div class="container col-8 pt-4 d-flex flex-column gap-3">
+    <div>
+      <p class="eyebrow mb-2">The Savorly community</p>
+      <h1 class="mb-2">Chef's Table</h1>
+      <p class="text-muted mb-0">Every recipe shared by our chefs.</p>
+    </div>
+    <a class="btn btn-primary align-self-start" href="{% url 'recipes' %}">
+      Add another recipe
+    </a>
+  </div>
+
+  <div class="table-responsive mt-4">
+    <table class="container table table-striped align-middle mt-5">
+      <thead>
+        <tr>
+          <th scope="col">#</th>
+          <th scope="col">Recipe Name</th>
+          <th scope="col">Recipe Description</th>
+          <th scope="col">Recipe Image</th>
+          <th scope="col">Delete</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for recipe in recipes %}
+          <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ recipe.name }}</td>
+            <td>{{ recipe.recipe_description }}</td>
+            <td>
+              {% if recipe.recipe_image %}
+                <img
+                  src="{{ recipe.recipe_image.url }}"
+                  alt="{{ recipe.name }}"
+                  width="100"
+                />
+              {% else %}
+                <span class="text-muted">No image</span>
+              {% endif %}
+            </td>
+            <td>
+              <a
+                href="{% url 'delete_recipe' recipe.id %}"
+                class="btn btn-danger"
+              >Delete</a>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="5" class="text-center text-muted py-4">
+              No recipes have been added yet.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</main>
+{% endblock %}
