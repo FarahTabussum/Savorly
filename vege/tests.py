@@ -84,7 +84,14 @@ class ChefRecipeTests(TestCase):
 
         expected_preview = " ".join(f"word{number}" for number in range(1, 31))
         self.assertContains(response, expected_preview)
-        self.assertNotContains(response, "word31")
+
+        content = response.content.decode()
+        # The visible preview stops after thirty words...
+        visible_cell = content.split('class="chefs-table__description"', 1)[1]
+        visible_cell = visible_cell.split("</td>", 1)[0]
+        self.assertNotIn("word31", visible_cell)
+        # ...while the full text stays available for the ingredient search.
+        self.assertIn(f'data-description="{description}"', content)
 
     def test_recipe_details_shows_complete_recipe_in_order(self):
         description = " ".join(f"word{number}" for number in range(1, 41))
@@ -196,11 +203,12 @@ class ChefRecipeTests(TestCase):
             name="Chef only",
             recipe_description="This page is chef only.",
         )
+        # Everyone can browse a recipe's details read-only...
         details_response = self.client.get(
             reverse("recipe_details", args=[existing_recipe.pk])
         )
-        self.assertRedirects(details_response, reverse("home"))
-
+        self.assertEqual(details_response.status_code, 200)
+        # ...but nobody but a chef can add recipes.
         response = self.client.post(
             reverse("recipes"),
             {

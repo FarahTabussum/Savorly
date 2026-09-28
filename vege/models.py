@@ -77,8 +77,11 @@ class Notification(models.Model):
     class NotificationType(models.TextChoices):
         LIKE = "like", "Like"
         COMMENT = "comment", "Comment"
+        REPLY = "reply", "Reply"
 
-    chef = models.ForeignKey(
+    # The recipient. Any logged-in user can receive notifications
+    # (chefs get activity on their recipes; commenters get replies).
+    user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="notifications",
@@ -92,6 +95,15 @@ class Notification(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="sent_notifications",
+    )
+    comment = models.ForeignKey(
+        Comment,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="notifications",
+        help_text="Comment/reply that triggered this notification; "
+        "deleting it removes the notification too.",
     )
     notification_type = models.CharField(
         max_length=10,
@@ -109,4 +121,4 @@ class Notification(models.Model):
         ordering = ["-created_at"]
 
     def __str__(self):
-        return f"{self.notification_type} for {self.chef.username} from {self.sender.username}"
+        return f"{self.notification_type} for {self.user.username} from {self.sender.username}"

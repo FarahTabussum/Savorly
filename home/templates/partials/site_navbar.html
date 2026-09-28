@@ -34,7 +34,6 @@
 
     <div class="site-navbar__account">
       {% if user.is_authenticated %}
-        {% if user.profile.is_approved_chef %}
           <div class="notification-bell">
             <a href="{% url 'notifications' %}" class="notification-bell__link" aria-label="Notifications">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -44,7 +43,6 @@
               <span class="notification-bell__badge" id="notification-badge" style="display: none;"></span>
             </a>
           </div>
-        {% endif %}
         <span class="welcome-copy"
           >Welcome, {{ user.first_name|default:user.username }}</span
         >

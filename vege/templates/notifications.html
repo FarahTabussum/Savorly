@@ -8,10 +8,10 @@
 <main class="notifications-shell">
   <header class="notifications-header">
     <div>
-      <p class="eyebrow mb-2">Chef notifications</p>
-      <h1>Your recipe activity</h1>
+      <p class="eyebrow mb-2">Notifications</p>
+      <h1>Your activity</h1>
       <p class="notifications-subtitle">
-        See who liked or commented on your recipes.
+        See who liked, commented on, or replied to you.
       </p>
     </div>
     <a class="btn btn-outline-secondary" href="{% url 'mark_notifications_read' %}">
@@ -25,7 +25,9 @@
         class="notification-card {% if not notification.is_read %}notification-card--unread{% endif %}"
         id="notification-{{ notification.pk }}"
         data-notification-id="{{ notification.pk }}"
+        data-notification-type="{{ notification.notification_type }}"
         data-recipe-url="{% url 'recipe_details' notification.recipe.pk %}"
+        {% if notification.comment_id %}data-comment-id="{{ notification.comment_id }}"{% endif %}
       >
         <div class="notification-icon notification-icon--{{ notification.notification_type }}">
           {% if notification.notification_type == 'like' %}
@@ -43,6 +45,8 @@
             <strong>{{ notification.sender.username }}</strong>
             {% if notification.notification_type == 'like' %}
               liked your recipe
+            {% elif notification.notification_type == 'reply' %}
+              replied to your comment on
             {% else %}
               commented on your recipe
             {% endif %}
@@ -66,7 +70,7 @@
     {% empty %}
       <div class="notifications-empty">
         <span aria-hidden="true">🔔</span>
-        <p>No notifications yet. When someone likes or comments on your recipes, you'll see it here.</p>
+        <p>No notifications yet. When someone likes, comments on, or replies to you, you'll see it here.</p>
       </div>
     {% endfor %}
   </div>

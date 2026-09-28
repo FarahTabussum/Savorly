@@ -2721,6 +2721,22 @@ body:has(.container.card.shadow-lg) {
   background: var(--sage-wash);
 }
 
+/* Highlight the comment the visitor was sent to from a notification */
+.comment-card:target {
+  border-color: var(--sage-dark);
+  box-shadow: 0 0 0 3px rgba(79, 117, 91, 0.28);
+  animation: comment-target-glow 1.8s ease-out;
+}
+
+@keyframes comment-target-glow {
+  0% {
+    box-shadow: 0 0 0 8px rgba(79, 117, 91, 0.35);
+  }
+  100% {
+    box-shadow: 0 0 0 3px rgba(79, 117, 91, 0.28);
+  }
+}
+
 .comment-header {
   display: flex;
   align-items: center;

@@ -391,7 +391,7 @@ document.addEventListener("DOMContentLoaded", function() {
       if (list && !list.querySelector(".notification-card")) {
         list.innerHTML =
           '<div class="notifications-empty"><span aria-hidden="true">🔔</span>' +
-          "<p>No notifications yet. When someone likes or comments on your recipes, " +
+          "<p>No notifications yet. When someone likes, comments on, or replies to you, " +
           "you'll see it here.</p></div>";
       }
     })
@@ -407,7 +407,13 @@ document.addEventListener("DOMContentLoaded", function() {
     if (!card) return;
 
     var id = card.dataset.notificationId;
-    var url = card.dataset.recipeUrl;
+    var url = card.dataset.recipeUrl || "";
+    // Jump straight to the comment (or like button) that triggered it
+    if (card.dataset.commentId) {
+      url += "#comment-" + card.dataset.commentId;
+    } else if (card.dataset.notificationType === "like") {
+      url += "#like-button";
+    }
 
     // Mark as read without a page refresh; badge stays in sync
     fetch("/notifications/mark-read/" + id + "/", {
