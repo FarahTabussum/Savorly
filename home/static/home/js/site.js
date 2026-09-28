@@ -45,15 +45,23 @@ document.addEventListener("DOMContentLoaded", function() {
         .split(/[\s,]+/)
         .filter(function(word) { return word.length > 0; });
 
+      // Singularize: "prawns" -> "prawn", "tomatoes" -> "tomato"
+      function singular(word) {
+        if (word.length > 3 && word.slice(-2) === "es") return word.slice(0, -2);
+        if (word.length > 2 && word.slice(-1) === "s") return word.slice(0, -1);
+        return word;
+      }
+
       var visible = 0;
       recipeRows.forEach(function(row) {
         var words = (row.dataset.description || "")
           .toLowerCase()
           .split(/[^a-z0-9]+/)
-          .filter(function(word) { return word.length > 0; });
+          .filter(function(word) { return word.length > 0; })
+          .map(singular);
         var matches = 0;
         ingredients.forEach(function(ing) {
-          if (words.indexOf(ing) !== -1) matches++;
+          if (words.indexOf(singular(ing)) !== -1) matches++;
         });
         var show = ingredients.length === 0 || matches >= 2;
         row.style.display = show ? "" : "none";
