@@ -40,6 +40,10 @@ The project uses Django's built-in authentication and admin systems, SQLite for 
 - Public login explains when an application is pending, removed, inactive, or not yet approved.
 - Admin approval activates the chef account and records the approving administrator and approval time.
 - Approval email includes the chef's username and a role-specific sign-in link.
+<<<<<<< Updated upstream
+=======
+- Chef applications do not send an email at submission time; the notification is sent after an administrator approves the application.
+>>>>>>> Stashed changes
 - Administrators can resend approval emails to approved chefs.
 - Administrators can remove chef access, deactivate the account, and record the removal time and reviewer.
 - Removed chefs can reapply with the same username; registration updates their email and password and returns the profile to pending status.
@@ -83,7 +87,11 @@ All recipe tools currently require an **approved chef** account.
 - Graceful "No image" placeholders for recipes without an uploaded image.
 - Update only recipes owned by the signed-in chef.
 - Preserve an existing image when editing unless a replacement is submitted, with a clear control for removing it.
+<<<<<<< Updated upstream
 - Hide update and delete actions for other chefs' recipes.
+=======
+- Hide update and delete actions for other chefs' recipes; recipes without an owner are view-only.
+>>>>>>> Stashed changes
 - Prevent regular users and other non-chef accounts from accessing recipe management pages.
 - Return helpful Django messages after recipe creation, updates, and deletion.
 - Legacy route aliases are retained for Chef's Table and recipe update URLs.
@@ -110,6 +118,22 @@ Chef approval emails are sent through Django's email framework.
 - Other HTTP methods are rejected.
 - This is an application-liveness check only; it does not verify database connectivity, migration state, media storage, static files, or SMTP.
 
+<<<<<<< Updated upstream
+=======
+### UI behavior and states
+
+- The application uses full-page HTML form submissions; there is no SPA, client-side router, REST client, or asynchronous recipe state.
+- The only client-side state is password visibility, the selected login-role styling, and dismissed flash messages.
+- Successful registration, login, recipe actions, and admin actions use shared Django flash messages.
+- Registration and login validation errors render with HTTP 400 and field-level messages; invalid recipe forms re-render with HTTP 200 and form errors.
+- Anonymous access to protected pages redirects to login, non-chef access redirects home, missing recipes return 404, and unsupported logout/health methods return 405.
+- The Chef's Table provides an explicit empty state; recipes without images have table, details, and update-page fallbacks.
+- There are no spinners, skeleton screens, upload-progress indicators, disabled-submit states, or custom 403/404/500 templates.
+- The mobile navbar wraps its links rather than using a hamburger menu, and the wide recipe table uses horizontal scrolling.
+- Keyboard focus styles, `aria-current`, `aria-live`, `aria-invalid`, fieldset/legend login controls, semantic tables, and reduced-motion preferences are supported.
+- There is currently no skip-to-content link, and recipe form field errors are not fully connected to `aria-describedby`.
+
+>>>>>>> Stashed changes
 ## Technology
 
 | Component      | Technology                                                |
