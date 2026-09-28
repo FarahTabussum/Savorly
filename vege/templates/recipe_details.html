@@ -4,7 +4,8 @@
 {% block body_class %}recipe-page recipe-details-page{% endblock %}
 
 {% block start %}
-<main class="recipe-details-shell">
+{% csrf_token %}
+<main class="recipe-details-shell" data-recipe-id="{{ recipe.pk }}">
   <a class="recipe-details-back" href="{% url 'chefs_table' %}">
     <span aria-hidden="true">←</span> Back to Chef's Table
   </a>
@@ -25,10 +26,7 @@
 
     <div class="recipe-details-media">
       {% if recipe.recipe_image %}
-        <img
-          src="{{ recipe.recipe_image.url }}"
-          alt="{{ recipe.name }}"
-        />
+        <img src="{{ recipe.recipe_image.url }}" alt="{{ recipe.name }}" />
       {% else %}
         <div class="recipe-details-placeholder" role="img" aria-label="No image provided">
           <span aria-hidden="true">No image</span>
@@ -40,6 +38,117 @@
       <h2 id="recipe-description-heading">Recipe description</h2>
       <div class="recipe-details-description__text">
         {{ recipe.recipe_description|linebreaksbr }}
+      </div>
+    </section>
+
+    <section class="recipe-details-interactions">
+      <div class="recipe-likes">
+        <button
+          type="button"
+          id="like-button"
+          class="like-button {% if user_has_liked %}like-button--active{% endif %}"
+          data-recipe-id="{{ recipe.pk }}"
+          data-action="{% if user_has_liked %}unlike{% else %}like{% endif %}"
+        >
+          <svg viewBox="0 0 24 24" fill="{% if user_has_liked %}currentColor{% else %}none{% endif %}" stroke="currentColor" stroke-width="2">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+          </svg>
+          <span id="like-count">{{ likes_count }} like{{ likes_count|pluralize }}</span>
+        </button>
+      </div>
+
+      <div class="recipe-comments">
+        <h2>Comments (<span id="comment-count">{{ comment_count }}</span>)</h2>
+
+        <div id="comment-form" class="comment-form">
+          <textarea
+            id="comment-text"
+            name="comment_text"
+            placeholder="Add a comment..."
+            rows="3"
+            maxlength="1000"
+          ></textarea>
+          <button type="button" id="comment-submit" class="btn btn-primary">Post Comment</button>
+        </div>
+
+        <div class="comments-list" id="comments-list">
+          {% for comment in comments %}
+            <div class="comment-card" id="comment-{{ comment.id }}">
+              <div class="comment-header">
+                <span class="comment-author">
+                  <strong>{{ comment.user.username }}</strong>
+                  {% if comment.user == recipe.posted_by %}
+                    <span class="comment-chef-badge">chef</span>
+                  {% endif %}
+                </span>
+                <span class="comment-time">{{ comment.created_at|timesince }} ago</span>
+              </div>
+              <p class="comment-text">{{ comment.text }}</p>
+              <div class="comment-actions">
+                <button type="button" class="comment-reply-btn" data-comment-id="{{ comment.id }}">
+                  Reply
+                </button>
+                {% if comment.user == user %}
+                  <button
+                    type="button"
+                    class="comment-delete"
+                    data-comment-id="{{ comment.id }}"
+                    data-recipe-id="{{ recipe.pk }}"
+                  >
+                    Delete
+                  </button>
+                {% endif %}
+              </div>
+
+              {% with replies=comment.replies.all|dictsort:"created_at" %}
+                {% if replies %}
+                  <div class="comment-replies">
+                    {% for reply in replies %}
+                      <div class="comment-card comment-card--reply" id="comment-{{ reply.id }}">
+                        <div class="comment-header">
+                          <span class="comment-author">
+                            <strong>{{ reply.user.username }}</strong>
+                            {% if reply.user == recipe.posted_by %}
+                              <span class="comment-chef-badge">chef</span>
+                            {% endif %}
+                          </span>
+                          <span class="comment-time">{{ reply.created_at|timesince }} ago</span>
+                        </div>
+                        <p class="comment-text">{{ reply.text }}</p>
+                        <div class="comment-actions">
+                          {% if reply.user == user %}
+                            <button
+                              type="button"
+                              class="comment-delete"
+                              data-comment-id="{{ reply.id }}"
+                              data-recipe-id="{{ recipe.pk }}"
+                            >
+                              Delete
+                            </button>
+                          {% endif %}
+                        </div>
+                      </div>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+              {% endwith %}
+
+              <div class="reply-form" data-reply-form="{{ comment.id }}" hidden>
+                <textarea
+                  rows="2"
+                  maxlength="1000"
+                  placeholder="Reply to {{ comment.user.username }}..."
+                ></textarea>
+                <div class="reply-form__actions">
+                  <button type="button" class="btn btn-primary reply-submit">Post Reply</button>
+                  <button type="button" class="reply-cancel">Cancel</button>
+                </div>
+              </div>
+            </div>
+          {% empty %}
+            <p class="comments-empty" id="comments-empty">No comments yet. Be the first to share your thoughts!</p>
+          {% endfor %}
+        </div>
       </div>
     </section>
   </article>

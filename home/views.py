@@ -47,7 +47,7 @@ def _landing_url_for(user):
     profile = getattr(user, "profile", None)
     if profile is not None and profile.is_approved_chef:
         return reverse("recipes")
-    return reverse("home")
+    return reverse("chefs_table")
 
 
 def _login_destination(user, next_url):

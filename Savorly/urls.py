@@ -27,7 +27,7 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path(" ", home_views.home, name="home"),
+    path("", home_views.home, name="home"),
     path("register/<str:role>/", home_views.register, name="register"),
     path("login/", home_views.login_view, name="login"),
     path("logout/", home_views.logout_view, name="logout"),
@@ -43,6 +43,11 @@ urlpatterns = [
     path("update_recipe/<int:pk>/", recipe_views.update_recipe, name="update_recipe"),
     path("update-recipe/<int:pk>/", recipe_views.update_recipe, name="update_recipe_hyphen"),
     path("delete_recipe/<id>/", recipe_views.delete_recipe, name="delete_recipe"),
+    path("notifications/", recipe_views.notifications, name="notifications"),
+    path("notifications/mark-read/", recipe_views.mark_notifications_read, name="mark_notifications_read"),
+    path("notifications/mark-read/<int:pk>/", recipe_views.mark_notification_read, name="mark_notification_read"),
+    path("notifications/delete/<int:pk>/", recipe_views.delete_notification, name="delete_notification"),
+    path("api/notifications/unread-count/", recipe_views.unread_notification_count, name="unread_notification_count"),
 ]
 
 if settings.DEBUG:

@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block title %}Notifications — Savorly{% endblock %}
+{% block body_class %}notifications-page{% endblock %}
+
+{% block start %}
+{% csrf_token %}
+<main class="notifications-shell">
+  <header class="notifications-header">
+    <div>
+      <p class="eyebrow mb-2">Chef notifications</p>
+      <h1>Your recipe activity</h1>
+      <p class="notifications-subtitle">
+        See who liked or commented on your recipes.
+      </p>
+    </div>
+    <a class="btn btn-outline-secondary" href="{% url 'mark_notifications_read' %}">
+      Mark all as read
+    </a>
+  </header>
+
+  <div class="notifications-list">
+    {% for notification in notifications %}
+      <div
+        class="notification-card {% if not notification.is_read %}notification-card--unread{% endif %}"
+        id="notification-{{ notification.pk }}"
+        data-notification-id="{{ notification.pk }}"
+        data-recipe-url="{% url 'recipe_details' notification.recipe.pk %}"
+      >
+        <div class="notification-icon notification-icon--{{ notification.notification_type }}">
+          {% if notification.notification_type == 'like' %}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+          {% else %}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+          {% endif %}
+        </div>
+        <div class="notification-content">
+          <p class="notification-text">
+            <strong>{{ notification.sender.username }}</strong>
+            {% if notification.notification_type == 'like' %}
+              liked your recipe
+            {% else %}
+              commented on your recipe
+            {% endif %}
+            <a href="{% url 'recipe_details' notification.recipe.pk %}">{{ notification.recipe.name }}</a>
+          </p>
+          {% if notification.text %}
+            <p class="notification-quote">"{{ notification.text }}"</p>
+          {% endif %}
+          <span class="notification-time">{{ notification.created_at|timesince }} ago</span>
+        </div>
+        <button
+          type="button"
+          class="notification-dismiss"
+          data-notification-id="{{ notification.pk }}"
+          aria-label="Delete notification"
+          title="Delete notification"
+        >
+          &times;
+        </button>
+      </div>
+    {% empty %}
+      <div class="notifications-empty">
+        <span aria-hidden="true">🔔</span>
+        <p>No notifications yet. When someone likes or comments on your recipes, you'll see it here.</p>
+      </div>
+    {% endfor %}
+  </div>
+</main>
+{% endblock %}
